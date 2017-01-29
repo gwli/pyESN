@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from pyESN import ESN
+import copy
 
 import os
 pid = os.getpid()
@@ -30,7 +31,7 @@ def frequency_generator(N,min_period,max_period,n_changepoints):
     return np.hstack([np.ones((N,1)),1-frequency_control]),frequency_output
 
 
-N = 15000 # signal length
+N = 8000 # signal length
 min_period = 2
 max_period = 10
 n_changepoints = int(N/200)
@@ -58,50 +59,69 @@ esn = ESN(n_inputs = 2,
           silent = False)
 
 
-pred_train = esn.fit(train_ctrl,train_output,inspect=True)
+def test_error(title,esn,pred_train):
 
-print("test error:")
-pred_test = esn.predict(test_ctrl)
-print(np.sqrt(np.mean((pred_test - test_output)**2)))
+    print("test error:")
+    pred_test = esn.predict(test_ctrl)
+    print(np.sqrt(np.mean((pred_test - test_output)**2)))
 
-window_tr = range(int(len(train_output)/4),int(len(train_output)/4+2000))
-plt.figure(figsize=(10,1.5))
-plt.plot(train_ctrl[window_tr,1],label='control')
-plt.plot(train_output[window_tr],label='target')
-plt.plot(pred_train[window_tr],label='model')
-plt.legend(fontsize='x-small')
-plt.title('training (excerpt)')
-plt.ylim([-0.1,1.1])
+    window_tr = range(int(len(train_output)/4),int(len(train_output)/4+2000))
+    plt.figure(figsize=(10,1.5))
+    plt.plot(train_ctrl[window_tr,1],label='control')
+    plt.plot(train_output[window_tr],label='target')
+    plt.plot(pred_train[window_tr],label='model')
+    plt.legend(fontsize='x-small')
+    plt.title('training (excerpt)')
+    plt.ylim([-0.1,1.1])
 
-window_test = range(2000)
-plt.figure(figsize=(10,1.5))
-plt.plot(test_ctrl[window_test,1],label='control')
-plt.plot(test_output[window_test],label='target')
-plt.plot(pred_test[window_test],label='model')
-plt.legend(fontsize='x-small')
-plt.title('test (excerpt)')
-plt.ylim([-0.1,1.1]);
+    window_test = range(2000)
+    plt.figure(figsize=(10,1.5))
+    plt.plot(test_ctrl[window_test,1],label='control')
+    plt.plot(test_output[window_test],label='target')
+    plt.plot(pred_test[window_test],label='model')
+    plt.legend(fontsize='x-small')
+    plt.title('test (excerpt)')
+    plt.ylim([-0.1,1.1]);
 
-def draw_spectogram(data):
-    plt.specgram(data,Fs=4,NFFT=256,noverlap=150,cmap=plt.cm.bone,detrend=lambda x:(x-0.5))
-    plt.gca().autoscale('x')
-    plt.ylim([0,0.5])
-    plt.ylabel("freq")
-    plt.yticks([])
-    plt.xlabel("time")
-    plt.xticks([])
+    def draw_spectogram(data):
+        plt.specgram(data,Fs=4,NFFT=256,noverlap=150,cmap=plt.cm.bone,detrend=lambda x:(x-0.5))
+        plt.gca().autoscale('x')
+        plt.ylim([0,0.5])
+        plt.ylabel("freq")
+        plt.yticks([])
+        plt.xlabel("time")
+        plt.xticks([])
 
-plt.figure(figsize=(7,1.5))
-draw_spectogram(train_output.flatten())
-plt.title("training: target")
-plt.figure(figsize=(7,1.5))
-draw_spectogram(pred_train.flatten())
-plt.title("training: model")
+    plt.figure(figsize=(7,1.5))
+    draw_spectogram(train_output.flatten())
+    plt.title("training: target")
+    plt.figure(figsize=(7,1.5))
+    draw_spectogram(pred_train.flatten())
+    plt.title("training: model")
 
-plt.figure(figsize=(3,1.5))
-draw_spectogram(test_output.flatten())
-plt.title("test: target")
-plt.figure(figsize=(3,1.5))
-draw_spectogram(pred_test.flatten())
-plt.title("test: model")
-plt.show()
+    plt.figure(figsize=(3,1.5))
+    draw_spectogram(test_output.flatten())
+    plt.title("test: target")
+    plt.figure(figsize=(3,1.5))
+    draw_spectogram(pred_test.flatten())
+    plt.title("test: model")
+    plt.show()
+
+#pred_train = esn.fit(train_ctrl,train_output,inspect=True)
+internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+esn_Lasso = copy.deepcopy(esn)
+esn_Ridge = copy.deepcopy(esn)
+esn_ElasticNet = copy.deepcopy(esn)
+
+print "####pin"
+pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
+test_error("pinv",esn,pred_train)
+
+print "####ridge"
+pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
+#test_error("pinv",esn,pred_train)
+print "####Lasso"
+pred_train = esn_Lasso.train_readout_with_Lasso(internal_states,train_output,transient)
+#test_error("pinv",esn,pred_train)
+print "####ElasticNet"
+pred_train = esn_Lasso.train_readout_with_ElasticNet(internal_states,train_output,transient)

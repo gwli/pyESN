@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn import linear_model
 
 
 def correct_dimensions(s, targetlength):
@@ -185,9 +186,13 @@ class ESN():
         # include the raw inputs:
         extended_states = np.hstack((states, inputs_scaled))
         # Solve for W_out:
-        self.W_out = np.dot(np.linalg.pinv(extended_states[transient:, :]),
-                            self.inverse_out_activation(teachers_scaled[transient:, :])).T
+        #self.W_out = np.dot(np.linalg.pinv(extended_states[transient:, :]),
+        #                    self.inverse_out_activation(teachers_scaled[transient:, :])).T
 
+        reg = linear_model.Ridge (alpha = .5)
+        reg.fit (extended_states[transient:, :], teachers_scaled[transient:, :])  
+        self.W_out = reg.coef_          
+                            
         # remember the last state for later:
         self.laststate = states[-1, :]
         self.lastinput = inputs[-1, :]
@@ -209,6 +214,103 @@ class ESN():
         pred_train = self._unscale_teacher(self.out_activation(
             np.dot(extended_states, self.W_out.T)))
         if not self.silent:
+            print(np.sqrt(np.mean((pred_train - outputs)**2)))
+        return pred_train
+
+        
+        
+    def fit_customize(self,inputs,outputs,inspect=False):
+        internal_states,transient=self.train_reservior(inputs,outputs) 
+        #return self.train_readout_with_pin(internal_states,outputs,transient)        
+        return self.train_readout_with_ridge(internal_states,outputs,transient)        
+
+    def train_reservior(self,inputs,outputs):
+        """
+        Collect the network's reaction to training data, train readout weights.
+
+        Args:
+            inputs: array of dimensions (N_training_samples x n_inputs)
+            outputs: array of dimension (N_training_samples x n_outputs)
+            inspect: show a visualisation of the collected reservoir states
+
+        Returns:
+            the network's output on the training data, using the trained weights
+        """
+        # transform any vectors of shape (x,) into vectors of shape (x,1):
+        if inputs.ndim < 2:
+            inputs = np.reshape(inputs, (len(inputs), -1))
+        if outputs.ndim < 2:
+            outputs = np.reshape(outputs, (len(outputs), -1))
+        # transform input and teacher signal:
+        inputs_scaled = self._scale_inputs(inputs)
+        teachers_scaled = self._scale_teacher(outputs)
+
+        if not self.silent:
+            print("harvesting states...")
+        # step the reservoir through the given input,output pairs:
+        states = np.zeros((inputs.shape[0], self.n_reservoir))
+        for n in range(1, inputs.shape[0]):
+            states[n, :] = self._update(states[n - 1], inputs_scaled[n, :],
+                                        teachers_scaled[n - 1, :])
+
+        # learn the weights, i.e. find the linear combination of collected
+        # network states that is closest to the target output
+        if not self.silent:
+            print("fitting...")
+        # we'll disregard the first few states:
+        transient = min(int(inputs.shape[1] / 10), 100)
+        # include the raw inputs:
+        extended_states = np.hstack((states, inputs_scaled))
+        
+        # remember the last state for later:
+        self.laststate = states[-1, :]
+        self.lastinput = inputs[-1, :]
+        return (extended_states,transient)
+
+    def train_readout_with_pin(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+        self.W_out = np.dot(np.linalg.pinv(states[transient:, :]),
+                            self.inverse_out_activation(teachers_scaled[transient:, :])).T
+
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
+
+    def train_readout_with_ridge(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+        reg = linear_model.Ridge (alpha = .5)
+        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        self.W_out = reg.coef_ 
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
+
+    def train_readout_with_Lasso(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+        reg = linear_model.Lasso (alpha = 0.1)
+        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        self.W_out = reg.coef_ 
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
+
+    def train_readout_with_ElasticNet(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+        reg = linear_model.ElasticNet(alpha = 0.1,l1_ratio= 0.2)
+        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        self.W_out = reg.coef_ 
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
+
+    def cal_train_error(self,states,outputs):
+        if not self.silent:
+            print("training error:")
+        # apply learned weights to the collected states:
+        pred_train = self._unscale_teacher(self.out_activation(
+            np.dot(states, self.W_out.T)))
+        if not self.silent:
+            #mean = np.mean((pred_train - outputs)**2)
             print(np.sqrt(np.mean((pred_train - outputs)**2)))
         return pred_train
 
@@ -243,8 +345,7 @@ class ESN():
             [lastoutput, np.zeros((n_samples, self.n_outputs))])
 
         for n in range(n_samples):
-            states[
-                n + 1, :] = self._update(states[n, :], inputs[n + 1, :], outputs[n, :])
+            states[n + 1, :] = self._update(states[n, :], inputs[n + 1, :], outputs[n, :])
             outputs[n + 1, :] = self.out_activation(np.dot(self.W_out,
                                                            np.concatenate([states[n + 1, :], inputs[n + 1, :]])))
 
