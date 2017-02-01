@@ -5,14 +5,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3e0a24e3-f55c-4364-a605-7afe40dfebcb}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>testing.py</StartupFile>
+    <StartupFile>testMultiParent.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId />
-    <InterpreterVersion />
+    <InterpreterId>{798bfa62-2e86-4d82-a06b-1ab912ddd5e0}</InterpreterId>
+    <InterpreterVersion>2.7</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -21,11 +21,21 @@
     <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="changePic.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="freqgen.py" />
+    <Compile Include="Lorenz.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pyESN.py" />
     <Compile Include="testing.py" />
+    <Compile Include="testMultiParent.py" />
     <Compile Include="testPSO.py" />
     <Compile Include="testStatsModels.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{798bfa62-2e86-4d82-a06b-1ab912ddd5e0}\2.7" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

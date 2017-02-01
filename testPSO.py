@@ -1,8 +1,8 @@
 import numpy as np
-from pyswarm import pso
-
-###############################################################################
-
+from pso import pso
+import os
+debug = raw_input("Please attach to pid:{} to debug,then press any key".format(os.getpid()))
+##############################################################################
 print('*'*65)
 print('Example minimization of 4th-order banana function (no constraints)')
 def myfunc(x):

@@ -45,7 +45,7 @@ test_ctrl, test_output  = frequency_control[traintest_cutoff:],frequency_output[
 
 esn = ESN(n_inputs = 2,
           n_outputs = 1,
-          n_reservoir = 200,
+          n_reservoir = 800,
           spectral_radius = 0.25,
           sparsity = 0.95,
           noise = 0.001,
@@ -64,7 +64,8 @@ def test_error(title,esn,pred_train):
     print("test error:")
     pred_test = esn.predict(test_ctrl)
     print(np.sqrt(np.mean((pred_test - test_output)**2)))
-
+    return
+    
     window_tr = range(int(len(train_output)/4),int(len(train_output)/4+2000))
     plt.figure(figsize=(10,1.5))
     plt.plot(train_ctrl[window_tr,1],label='control')
@@ -105,13 +106,14 @@ def test_error(title,esn,pred_train):
     plt.figure(figsize=(3,1.5))
     draw_spectogram(pred_test.flatten())
     plt.title("test: model")
-    plt.show()
+    #plt.show()
 
 #pred_train = esn.fit(train_ctrl,train_output,inspect=True)
 internal_states,transient = esn.train_reservior(train_ctrl,train_output)
 esn_Lasso = copy.deepcopy(esn)
 esn_Ridge = copy.deepcopy(esn)
 esn_ElasticNet = copy.deepcopy(esn)
+esn_SCAD = copy.deepcopy(esn)
 
 print "####pin"
 pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
@@ -119,9 +121,13 @@ test_error("pinv",esn,pred_train)
 
 print "####ridge"
 pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
-#test_error("pinv",esn,pred_train)
+test_error("pinv",esn_Ridge,pred_train)
 print "####Lasso"
 pred_train = esn_Lasso.train_readout_with_Lasso(internal_states,train_output,transient)
-#test_error("pinv",esn,pred_train)
+test_error("pinv",esn_Lasso,pred_train)
 print "####ElasticNet"
-pred_train = esn_Lasso.train_readout_with_ElasticNet(internal_states,train_output,transient)
+pred_train = esn_ElasticNet.train_readout_with_ElasticNet(internal_states,train_output,transient)
+test_error("pinv",esn_ElasticNet,pred_train)
+print "####SCAD"
+pred_train = esn_SCAD.train_readout_with_SCAD(internal_states,train_output,transient)
+test_error("pinv",esn_ElasticNet,pred_train)

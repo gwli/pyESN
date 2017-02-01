@@ -1,5 +1,9 @@
 import numpy as np
 from sklearn import linear_model
+from statsmodels.base._penalized import PenalizedMixin 
+import statsmodels.base.model as base_model
+class SCAD(PenalizedMixin,base_model.GenericLikelihoodModel):
+    pass
 
 
 def correct_dimensions(s, targetlength):
@@ -279,7 +283,7 @@ class ESN():
     def train_readout_with_ridge(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
         reg = linear_model.Ridge (alpha = .5)
-        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
         # remember the last state for later:
         self.lastoutput = teachers_scaled[-1, :]
@@ -288,7 +292,7 @@ class ESN():
     def train_readout_with_Lasso(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
         reg = linear_model.Lasso (alpha = 0.1)
-        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
         # remember the last state for later:
         self.lastoutput = teachers_scaled[-1, :]
@@ -297,8 +301,19 @@ class ESN():
     def train_readout_with_ElasticNet(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
         reg = linear_model.ElasticNet(alpha = 0.1,l1_ratio= 0.2)
-        reg.fit (states[transient:, :], teachers_scaled[transient:, :])  
+        reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
+
+    def train_readout_with_SCAD(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+
+        #reg = SCAD(states[transient:, :], teachers_scaled[transient:, :])  
+        reg = SCAD( teachers_scaled[transient:, :],states[transient:, :])  
+        res=reg.fit()  
+        self.W_out = res.exog 
         # remember the last state for later:
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)
