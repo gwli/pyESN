@@ -1,10 +1,6 @@
 import numpy as np
 from sklearn import linear_model
-from statsmodels.base._penalized import PenalizedMixin 
-import statsmodels.base.model as base_model
-class SCAD(PenalizedMixin,base_model.GenericLikelihoodModel):
-    pass
-
+import SCAD
 
 def correct_dimensions(s, targetlength):
     """checks the dimensionality of some numeric argument s, broadcasts it
@@ -311,7 +307,7 @@ class ESN():
         teachers_scaled = self._scale_teacher(outputs)
 
         #reg = SCAD(states[transient:, :], teachers_scaled[transient:, :])  
-        reg = SCAD( teachers_scaled[transient:, :],states[transient:, :])  
+        reg = SCAD.scad( teachers_scaled[transient:, :],states[transient:, :])  
         res=reg.fit()  
         self.W_out = res.exog 
         # remember the last state for later:
