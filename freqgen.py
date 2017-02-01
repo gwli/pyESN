@@ -31,7 +31,8 @@ def frequency_generator(N,min_period,max_period,n_changepoints):
     return np.hstack([np.ones((N,1)),1-frequency_control]),frequency_output
 
 
-N = 8000 # signal length
+#N = 8000 # signal length
+N = 2000 # signal length
 min_period = 2
 max_period = 10
 n_changepoints = int(N/200)
@@ -59,6 +60,28 @@ esn = ESN(n_inputs = 2,
           silent = False)
 
 
+def pso_esn_parameters():
+    esn = ESN(n_inputs = 2,
+             n_outputs = 1,
+             n_reservoir = 200,
+             spectral_radius = 0.25,
+             sparsity = 0.95,
+             noise = 0.001,
+             input_shift = [0,0],
+             input_scaling = [0.01, 3],
+             teacher_scaling = 1.12,
+             teacher_shift = -0.7,
+             out_activation = np.tanh,
+             inverse_out_activation = np.arctanh,
+             random_state = rng,
+             silent = False)
+    print "scad"
+    internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+    pred_train = esn.train_readout_with_SCAD(internal_states,train_output,transient)
+    print("test error:")
+    pred_test = esn.predict(test_ctrl)
+    print(np.sqrt(np.mean((pred_test - test_output)**2)))
+             
 def test_error(title,esn,pred_train):
 
     print("test error:")
@@ -108,26 +131,46 @@ def test_error(title,esn,pred_train):
     plt.title("test: model")
     #plt.show()
 
-#pred_train = esn.fit(train_ctrl,train_output,inspect=True)
-internal_states,transient = esn.train_reservior(train_ctrl,train_output)
-esn_Lasso = copy.deepcopy(esn)
-esn_Ridge = copy.deepcopy(esn)
-esn_ElasticNet = copy.deepcopy(esn)
-esn_SCAD = copy.deepcopy(esn)
 
-print "####pin"
-pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
-test_error("pinv",esn,pred_train)
+def compair_readout():
+    esn = ESN(n_inputs = 2,
+             n_outputs = 1,
+             n_reservoir = 200,
+             spectral_radius = 0.25,
+             sparsity = 0.95,
+             noise = 0.001,
+             input_shift = [0,0],
+             input_scaling = [0.01, 3],
+             teacher_scaling = 1.12,
+             teacher_shift = -0.7,
+             out_activation = np.tanh,
+             inverse_out_activation = np.arctanh,
+             random_state = rng,
+             silent = False)
+    #pred_train = esn.fit(train_ctrl,train_output,inspect=True)
+    internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+    esn_Lasso = copy.deepcopy(esn)
+    esn_Ridge = copy.deepcopy(esn)
+    esn_ElasticNet = copy.deepcopy(esn)
+    esn_SCAD = copy.deepcopy(esn)
 
-print "####ridge"
-pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
-test_error("pinv",esn_Ridge,pred_train)
-print "####Lasso"
-pred_train = esn_Lasso.train_readout_with_Lasso(internal_states,train_output,transient)
-test_error("pinv",esn_Lasso,pred_train)
-print "####ElasticNet"
-pred_train = esn_ElasticNet.train_readout_with_ElasticNet(internal_states,train_output,transient)
-test_error("pinv",esn_ElasticNet,pred_train)
-print "####SCAD"
-pred_train = esn_SCAD.train_readout_with_SCAD(internal_states,train_output,transient)
-test_error("pinv",esn_ElasticNet,pred_train)
+    print "####pin"
+    pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
+    test_error("pinv",esn,pred_train)
+
+    print "####ridge"
+    pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
+    test_error("pinv",esn_Ridge,pred_train)
+    print "####Lasso"
+    pred_train = esn_Lasso.train_readout_with_Lasso(internal_states,train_output,transient)
+    test_error("pinv",esn_Lasso,pred_train)
+    print "####ElasticNet"
+    pred_train = esn_ElasticNet.train_readout_with_ElasticNet(internal_states,train_output,transient)
+    test_error("pinv",esn_ElasticNet,pred_train)
+    print "####SCAD"
+    pred_train = esn_SCAD.train_readout_with_SCAD(internal_states,train_output,transient)
+    test_error("pinv",esn_ElasticNet,pred_train)
+
+if __name__ == "__main__":
+    #pso_esn_parameters()
+    compair_readout()
