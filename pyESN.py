@@ -71,6 +71,11 @@ class ESN():
         self.inverse_out_activation = inverse_out_activation
         self.random_state = random_state
 
+        self.penal_tao = 0
+        self.penal_c0 =0
+
+        self.alpha = 0.5
+
         # the given random_state might be either an actual RandomState object,
         # a seed or None (in which case we use numpy's builtin RandomState)
         if isinstance(random_state, np.random.RandomState):
@@ -278,7 +283,7 @@ class ESN():
 
     def train_readout_with_ridge(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
-        reg = linear_model.Ridge (alpha = .5)
+        reg = linear_model.Ridge (alpha = self.alpha)
         reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
         # remember the last state for later:
@@ -308,8 +313,10 @@ class ESN():
 
         #reg = SCAD(states[transient:, :], teachers_scaled[transient:, :])  
         reg = SCAD.scad( teachers_scaled[transient:, :],states[transient:, :])  
+        reg.penal.tao = self.penal_tao
+        reg.penal.c0 = self.penal_c0
         res=reg.fit()  
-        self.W_out = res.exog 
+        self.W_out = res.params 
         # remember the last state for later:
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)

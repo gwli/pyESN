@@ -24,9 +24,14 @@ def plot(trajectory):
   [z for (_,_,z) in trajectory])
  plt.show()
 
+def plot_1(trajectory):
+ fig = plt.figure()
+ ax = fig.gca()
+ ax.plot( [z for (_,_,z) in trajectory])
+ plt.show()
 steps = 100000
 dt = 1e-3
 
 l = lorenz(dt)
 t = trajectory(l,(1.0,0.0,0.0),steps)
-plot(t)
+plot_1(t)

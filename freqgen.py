@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pyESN import ESN
 import copy
+from pso import pso
 
 import os
 pid = os.getpid()
@@ -38,12 +39,37 @@ max_period = 10
 n_changepoints = int(N/200)
 frequency_control,frequency_output = frequency_generator(N,min_period,max_period,n_changepoints)
 
+
+############ lozren
+def lorenz(dt,sigma=10.0,beta=2.66667,ro=28.):
+    def l(x,y,z):
+        xn = y*dt*sigma + x*(1 - dt*sigma)
+        yn = x*dt*(ro-z) + y*(1-dt)
+        zn = x*y*dt + z*(1 - dt*beta)
+        return (xn,yn,zn)
+    return l
+
+def trajectory(system,origin,steps):
+    t = [origin]
+    for _ in range(steps):
+        t.append(system(*t[-1]))
+    return t
+
+dt = 1e-3
+
+l = lorenz(dt)
+t = trajectory(l,(1.0,0.0,0.0),N)
+
+frequency_control = np.array([(x,y) for (x,y,_) in t])
+frequency_output = np.array([ [z]  for (_,_,z) in t])
+#######################################################################
 traintest_cutoff = int(np.ceil(0.7*N))
 
 train_ctrl,train_output = frequency_control[:traintest_cutoff],frequency_output[:traintest_cutoff]
 test_ctrl, test_output  = frequency_control[traintest_cutoff:],frequency_output[traintest_cutoff:]
 
 
+#####################
 esn = ESN(n_inputs = 2,
           n_outputs = 1,
           n_reservoir = 800,
@@ -60,27 +86,95 @@ esn = ESN(n_inputs = 2,
           silent = False)
 
 
-def pso_esn_parameters():
+def pso_esn_parameters_for_scad(x):
+    # 0: tao, 1:c0, 2:IC_s,3:IC_e 4:IS_s,5:IS_e, ,6:teacher sacling,7:teacher shift
+    tao = x[0]
+    c0 =  x[1]
+    ic_s =x[2]
+    ic_e =x[3]
+    is_s = x[4]
+    is_e = x[5]
+    teacher_scaling = x[6]
+    teacher_shift = x[7]
+     
     esn = ESN(n_inputs = 2,
              n_outputs = 1,
              n_reservoir = 200,
              spectral_radius = 0.25,
              sparsity = 0.95,
              noise = 0.001,
-             input_shift = [0,0],
-             input_scaling = [0.01, 3],
-             teacher_scaling = 1.12,
-             teacher_shift = -0.7,
+             input_shift = [is_s,is_e],#[0,0]
+             input_scaling =[ic_s,ic_e],# [0.01, 3]
+             teacher_scaling = teacher_scaling,#1.12,
+             teacher_shift = teacher_shift,#-0.7,
              out_activation = np.tanh,
              inverse_out_activation = np.arctanh,
              random_state = rng,
              silent = False)
+    esn.penal_tao =tao
+    esn.penal_c0 = c0
     print "scad"
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
     pred_train = esn.train_readout_with_SCAD(internal_states,train_output,transient)
     print("test error:")
     pred_test = esn.predict(test_ctrl)
-    print(np.sqrt(np.mean((pred_test - test_output)**2)))
+    test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    print(test_error_rate)
+    return test_error_rate
+ 
+def opt_pso_scad():
+    lb = [0,0,0.01,3,1.12,-2,0,3,7]
+    ub = [1,1,0.3,10,2, -0.7,1,4]
+    xopt1, fopt1 = pso(pso_esn_parameters, lb, ub,debug=True)
+
+    print('The optimum is at:')
+    print('    {}'.format(xopt1))
+    print('Optimal function value:')
+    print('    myfunc: {}'.format(fopt1))
+
+def pso_esn_parameters_for_ridge(x):
+    # 0: tao, 1:c0, 2:IC_s,3:IC_e 4:IS_s,5:IS_e, ,6:teacher sacling,7:teacher shift
+    ic_s =x[0]
+    ic_e =x[1]
+    is_s = x[2]
+    is_e = x[3]
+    teacher_scaling = x[4]
+    teacher_shift = x[5]
+    alpha =x[6]
+
+     
+    esn = ESN(n_inputs = 2,
+             n_outputs = 1,
+             n_reservoir = 200,
+             spectral_radius = 0.25,
+             sparsity = 0.95,
+             noise = 0.001,
+             input_shift = [is_s,is_e],#[0,0]
+             input_scaling =[ic_s,ic_e],# [0.01, 3]
+             teacher_scaling = teacher_scaling,#1.12,
+             teacher_shift = teacher_shift,#-0.7,
+             out_activation = np.tanh,
+             inverse_out_activation = np.arctanh,
+             random_state = rng,
+             silent = False)
+    esn.alpha = alpha
+    print "ridge"
+    internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+    pred_train = esn.train_readout_with_ridge(internal_states,train_output,transient)
+    print("test error:")
+    pred_test = esn.predict(test_ctrl)
+    test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    print(test_error_rate)
+    return test_error_rate
+def opt_pso_ridge():
+    lb = [0,0,0.01,3,1.12,-2,0]
+    ub = [1,1,0.3,10,2, -0.7,1]
+    xopt1, fopt1 = pso(pso_esn_parameters_for_ridge, lb, ub,debug=True)
+
+    print('The optimum is at:')
+    print('    {}'.format(xopt1))
+    print('Optimal function value:')
+    print('    myfunc: {}'.format(fopt1))
              
 def test_error(title,esn,pred_train):
 
@@ -169,8 +263,8 @@ def compair_readout():
     test_error("pinv",esn_ElasticNet,pred_train)
     print "####SCAD"
     pred_train = esn_SCAD.train_readout_with_SCAD(internal_states,train_output,transient)
-    test_error("pinv",esn_ElasticNet,pred_train)
+    test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
-    #pso_esn_parameters()
-    compair_readout()
+    opt_pso()
+    #compair_readout()

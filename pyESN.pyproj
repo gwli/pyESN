@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3e0a24e3-f55c-4364-a605-7afe40dfebcb}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>testMultiParent.py</StartupFile>
+    <StartupFile>Lorenz.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -29,6 +29,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pyESN.py" />
+    <Compile Include="SCAD.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="testing.py" />
     <Compile Include="testMultiParent.py" />
     <Compile Include="testPSO.py" />
