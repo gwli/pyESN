@@ -123,9 +123,9 @@ def pso_esn_parameters_for_scad(x):
     return test_error_rate
  
 def opt_pso_scad():
-    lb = [0,0,0.01,3,1.12,-2,0,3,7]
-    ub = [1,1,0.3,10,2, -0.7,1,4]
-    xopt1, fopt1 = pso(pso_esn_parameters, lb, ub,debug=True)
+    lb = [0,0,0.01,3,1.12,-2,0,3.7]
+    ub = [1,1,0.3, 10,  2,-0.7,1,4]
+    xopt1, fopt1 = pso(pso_esn_parameters_for_scad, lb, ub,debug=True)
 
     print('The optimum is at:')
     print('    {}'.format(xopt1))
@@ -266,6 +266,6 @@ def compair_readout():
     test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
-    #opt_pso()
-    opt_pso_ridge()
+    opt_pso_scad()
+    #opt_pso_ridge()
     #compair_readout()

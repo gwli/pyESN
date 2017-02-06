@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3e0a24e3-f55c-4364-a605-7afe40dfebcb}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>Lorenz.py</StartupFile>
+    <StartupFile>freqgen.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
