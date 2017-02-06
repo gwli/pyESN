@@ -266,5 +266,6 @@ def compair_readout():
     test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
-    opt_pso()
+    #opt_pso()
+    opt_pso_ridge()
     #compair_readout()

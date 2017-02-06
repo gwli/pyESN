@@ -331,7 +331,7 @@ class PenalizedMixin(object):
         # I keep the following instead of adding default in pop for future changes
         if penal is None:
             # TODO: switch to unpenalized by default
-            self.penal = smpen.SCADSmoothed(0.1, c0=0.0001)
+            self.penal = SCADSmoothed(0.1, c0=0.0001)
         else:
             self.penal = penal
 
@@ -476,7 +476,7 @@ class PenalizedMixin(object):
         # I keep the following instead of adding default in pop for future changes
         if penal is None:
             # TODO: switch to unpenalized by default
-            self.penal = smpen.SCADSmoothed(0.1, c0=0.0001)
+            self.penal = SCADSmoothed(0.1, c0=0.0001)
         else:
             self.penal = penal
 
