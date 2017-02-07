@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn import linear_model
 import SCAD
+from pprint import pprint
 
 def correct_dimensions(s, targetlength):
     """checks the dimensionality of some numeric argument s, broadcasts it
@@ -75,6 +76,7 @@ class ESN():
         self.penal_c0 =0
 
         self.alpha = 0.5
+        self.l1_ratio = 0.2
 
         # the given random_state might be either an actual RandomState object,
         # a seed or None (in which case we use numpy's builtin RandomState)
@@ -91,6 +93,10 @@ class ESN():
         self.teacher_forcing = teacher_forcing
         self.silent = silent
         self.initweights()
+
+    def dump_parameters(self):
+        pprint(vars(self))
+        
 
     def initweights(self):
         # initialize recurrent weights:
@@ -301,7 +307,8 @@ class ESN():
 
     def train_readout_with_ElasticNet(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
-        reg = linear_model.ElasticNet(alpha = 0.1,l1_ratio= 0.2)
+        #reg = linear_model.ElasticNet(self.alpha = 0.1,l1_ratio= 0.2)
+        reg = linear_model.ElasticNet(alpha=self.alpha ,l1_ratio= self.l1_ratio)
         reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
         # remember the last state for later:
