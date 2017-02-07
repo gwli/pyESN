@@ -77,6 +77,7 @@ class ESN():
 
         self.alpha = 0.5
         self.l1_ratio = 0.2
+        self.train_error_rate = 0
 
         # the given random_state might be either an actual RandomState object,
         # a seed or None (in which case we use numpy's builtin RandomState)
@@ -334,9 +335,10 @@ class ESN():
         # apply learned weights to the collected states:
         pred_train = self._unscale_teacher(self.out_activation(
             np.dot(states, self.W_out.T)))
+        self.train_error_rate =  np.sqrt(np.mean((pred_train - outputs)**2))
         if not self.silent:
             #mean = np.mean((pred_train - outputs)**2)
-            print(np.sqrt(np.mean((pred_train - outputs)**2)))
+            print(self.train_error_rate)
         return pred_train
 
     def predict(self, inputs, continuation=True):

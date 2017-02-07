@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from pyESN import ESN
 import copy
 from pso import pso
+import inspect
 
 import os
 pid = os.getpid()
@@ -118,13 +119,13 @@ def pso_esn_parameters_for_scad(x):
              silent = False)
     esn.penal_tao =tao
     esn.penal_c0 = c0
-    print "scad"
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
     pred_train = esn.train_readout_with_SCAD(internal_states,train_output,transient)
-    print("test error:")
     pred_test = esn.predict(test_ctrl)
     test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
-    print(test_error_rate)
+    #get function name as title
+    title = inspect.stack()[0][3]
+    print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
     return test_error_rate
  
 def opt_pso_scad():
@@ -162,13 +163,13 @@ def pso_esn_parameters_for_ridge(x):
              random_state = rng,
              silent = False)
     esn.alpha = alpha
-    print "ridge"
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
     pred_train = esn.train_readout_with_ridge(internal_states,train_output,transient)
-    print("test error:")
     pred_test = esn.predict(test_ctrl)
     test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
-    print(test_error_rate)
+    #get function name as title
+    title = inspect.stack()[0][3]
+    print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
     return test_error_rate
 def opt_pso_ridge():
     lb = [0,0,0.01,3,1.12,-2,0]
@@ -207,13 +208,13 @@ def pso_esn_parameters_for_elasticnet(x):
              silent = False)
     esn.alpha = alpha
     esn.l1_ratio = l1_ratio
-    print "elasticnet"
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
     pred_train = esn.train_readout_with_ridge(internal_states,train_output,transient)
-    print("test error:")
     pred_test = esn.predict(test_ctrl)
     test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
-    print(test_error_rate)
+    #get function name as title
+    title = inspect.stack()[0][3]
+    print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
     return test_error_rate
 
 def opt_pso_elasticnet():
@@ -325,6 +326,7 @@ def compair_readout():
     test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
-    #opt_pso_scad()
-    #opt_pso_ridge()
+    opt_pso_ridge()
+    opt_pso_elasticnet()
+    opt_pso_scad()
     compair_readout()
