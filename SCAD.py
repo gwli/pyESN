@@ -601,5 +601,10 @@ class PenalizedMixin(object):
                 return res_aux
             else:
                 return res
-class scad(PenalizedMixin,base_model.GenericLikelihoodModel):
+
+class FixedGenericLikelihoodModel(base_model.GenericLikelihoodModel):
+    def loglike(self,params):
+        return 0
+
+class scad(PenalizedMixin,FixedGenericLikelihoodModel):
     pass
