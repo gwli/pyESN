@@ -220,7 +220,7 @@ def pso_esn_parameters_for_elasticnet(x):
 def opt_pso_elasticnet():
     lb = [0,0,0.01,3,1.12,-2,0,0]
     ub = [1,1,0.3,10,2, -0.7,1,1]
-    xopt1, fopt1 = pso(pso_esn_parameters_for_ridge, lb, ub,debug=True)
+    xopt1, fopt1 = pso(pso_esn_parameters_for_elasticnet, lb, ub,debug=True)
 
     print('The optimum is at:')
     print('    {}'.format(xopt1))
