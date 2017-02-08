@@ -74,10 +74,10 @@ train_ctrl,train_output = frequency_control[:traintest_cutoff],frequency_output[
 test_ctrl, test_output  = frequency_control[traintest_cutoff:],frequency_output[traintest_cutoff:]
 
 
-n_reservoir = 800,
-spectral_radius = 0.25,
-sparsity = 0.95,
-noise = 0.001,
+n_reservoir = 800
+spectral_radius = 0.25
+sparsity = 0.95
+noise = 0.001
 #####################
 esn = ESN(n_inputs = 2,
           n_outputs = 1,
@@ -374,6 +374,7 @@ def compair_readout():
 
 if __name__ == "__main__":
     opt_pso_ridge()
+    opt_pso_lasso()
     opt_pso_elasticnet()
     opt_pso_scad()
     compair_readout()
