@@ -297,16 +297,17 @@ class ESN():
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)
 
-    def train_readout_with_Lasso(self,states,outputs,transient):
+    def train_readout_with_lasso(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
-        reg = linear_model.Lasso (alpha = 0.1)
+        #reg = linear_model.Lasso (alpha = 0.1)
+        reg = linear_model.Lasso (alpha = self.alpha)
         reg.fit(states[transient:, :], teachers_scaled[transient:, :])  
         self.W_out = reg.coef_ 
         # remember the last state for later:
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)
 
-    def train_readout_with_ElasticNet(self,states,outputs,transient):
+    def train_readout_with_elasticnet(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
         #reg = linear_model.ElasticNet(self.alpha = 0.1,l1_ratio= 0.2)
         reg = linear_model.ElasticNet(alpha=self.alpha ,l1_ratio= self.l1_ratio)
@@ -316,7 +317,7 @@ class ESN():
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)
 
-    def train_readout_with_SCAD(self,states,outputs,transient):
+    def train_readout_with_scad(self,states,outputs,transient):
         teachers_scaled = self._scale_teacher(outputs)
 
         #reg = SCAD(states[transient:, :], teachers_scaled[transient:, :])  

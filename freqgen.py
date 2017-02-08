@@ -74,13 +74,17 @@ train_ctrl,train_output = frequency_control[:traintest_cutoff],frequency_output[
 test_ctrl, test_output  = frequency_control[traintest_cutoff:],frequency_output[traintest_cutoff:]
 
 
+n_reservoir = 800,
+spectral_radius = 0.25,
+sparsity = 0.95,
+noise = 0.001,
 #####################
 esn = ESN(n_inputs = 2,
           n_outputs = 1,
-          n_reservoir = 800,
-          spectral_radius = 0.25,
-          sparsity = 0.95,
-          noise = 0.001,
+          n_reservoir = n_reservoir,
+          spectral_radius = spectral_radius, 
+          sparsity = sparsity,
+          noise = noise,
           input_shift = [0,0],
           input_scaling = [0.01, 3],
           teacher_scaling = 1.12,
@@ -105,10 +109,10 @@ def pso_esn_parameters_for_scad(x):
      
     esn = ESN(n_inputs = 2,
              n_outputs = 1,
-             n_reservoir = 400,
-             spectral_radius = 0.25,
-             sparsity = 0.95,
-             noise = 0.001,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
              input_shift = [is_s,is_e],#[0,0]
              input_scaling =[ic_s,ic_e],# [0.01, 3]
              teacher_scaling = teacher_scaling,#1.12,
@@ -120,7 +124,7 @@ def pso_esn_parameters_for_scad(x):
     esn.penal_tao =tao
     esn.penal_c0 = c0
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
-    pred_train = esn.train_readout_with_SCAD(internal_states,train_output,transient)
+    pred_train = esn.train_readout_with_scad(internal_states,train_output,transient)
     pred_test = esn.predict(test_ctrl)
     test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
     #get function name as title
@@ -132,6 +136,49 @@ def opt_pso_scad():
     lb = [0,0,0.01,3,1.12,-2,0,3.7]
     ub = [1,1,0.3, 10,  2,-0.7,1,4]
     xopt1, fopt1 = pso(pso_esn_parameters_for_scad, lb, ub,debug=True)
+
+    print('The optimum is at:')
+    print('    {}'.format(xopt1))
+    print('Optimal function value:')
+    print('    myfunc: {}'.format(fopt1))
+
+def pso_esn_parameters_for_lasso(x):
+    ic_s =x[0]
+    ic_e =x[1]
+    is_s = x[2]
+    is_e = x[3]
+    teacher_scaling = x[4]
+    teacher_shift = x[5]
+    alpha =x[6]
+
+     
+    esn = ESN(n_inputs = 2,
+             n_outputs = 1,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
+             input_shift = [is_s,is_e],#[0,0]
+             input_scaling =[ic_s,ic_e],# [0.01, 3]
+             teacher_scaling = teacher_scaling,#1.12,
+             teacher_shift = teacher_shift,#-0.7,
+             out_activation = np.tanh,
+             inverse_out_activation = np.arctanh,
+             random_state = rng,
+             silent = False)
+    esn.alpha = alpha
+    internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+    pred_train = esn.train_readout_with_lasso(internal_states,train_output,transient)
+    pred_test = esn.predict(test_ctrl)
+    test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    #get function name as title
+    title = inspect.stack()[0][3]
+    print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
+    return test_error_rate
+def opt_pso_lasso():
+    lb = [0,0,0.01,3,1.12,-2,0]
+    ub = [1,1,0.3,10,2, -0.7,1]
+    xopt1, fopt1 = pso(pso_esn_parameters_for_lasso, lb, ub,debug=True)
 
     print('The optimum is at:')
     print('    {}'.format(xopt1))
@@ -150,10 +197,10 @@ def pso_esn_parameters_for_ridge(x):
      
     esn = ESN(n_inputs = 2,
              n_outputs = 1,
-             n_reservoir = 400,
-             spectral_radius = 0.25,
-             sparsity = 0.95,
-             noise = 0.001,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
              input_shift = [is_s,is_e],#[0,0]
              input_scaling =[ic_s,ic_e],# [0.01, 3]
              teacher_scaling = teacher_scaling,#1.12,
@@ -194,10 +241,10 @@ def pso_esn_parameters_for_elasticnet(x):
      
     esn = ESN(n_inputs = 2,
              n_outputs = 1,
-             n_reservoir = 200,
-             spectral_radius = 0.25,
-             sparsity = 0.95,
-             noise = 0.001,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
              input_shift = [is_s,is_e],#[0,0]
              input_scaling =[ic_s,ic_e],# [0.01, 3]
              teacher_scaling = teacher_scaling,#1.12,
@@ -209,7 +256,7 @@ def pso_esn_parameters_for_elasticnet(x):
     esn.alpha = alpha
     esn.l1_ratio = l1_ratio
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
-    pred_train = esn.train_readout_with_ridge(internal_states,train_output,transient)
+    pred_train = esn.train_readout_with_elasticnet(internal_states,train_output,transient)
     pred_test = esn.predict(test_ctrl)
     test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
     #get function name as title
@@ -281,10 +328,10 @@ def test_error(title,esn,pred_train):
 def compair_readout():
     esn = ESN(n_inputs = 2,
              n_outputs = 1,
-             n_reservoir = 400,
-             spectral_radius = 0.25,
-             sparsity = 0.95,
-             noise = 0.001,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
              input_shift = [0,0],
              input_scaling = [0.01, 3],
              teacher_scaling = 1.12,
@@ -314,15 +361,15 @@ def compair_readout():
     test_error("pinv",esn_Ridge,pred_train)
 
     print "####Lasso"
-    pred_train = esn_Lasso.train_readout_with_Lasso(internal_states,train_output,transient)
+    pred_train = esn_Lasso.train_readout_with_lasso(internal_states,train_output,transient)
     test_error("pinv",esn_Lasso,pred_train)
 
     print "####ElasticNet"
-    pred_train = esn_ElasticNet.train_readout_with_ElasticNet(internal_states,train_output,transient)
+    pred_train = esn_ElasticNet.train_readout_with_elasticnet(internal_states,train_output,transient)
     test_error("pinv",esn_ElasticNet,pred_train)
 
     print "####SCAD"
-    pred_train = esn_SCAD.train_readout_with_SCAD(internal_states,train_output,transient)
+    pred_train = esn_SCAD.train_readout_with_scad(internal_states,train_output,transient)
     test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
