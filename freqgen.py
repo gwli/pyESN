@@ -142,6 +142,52 @@ def opt_pso_scad():
     print('Optimal function value:')
     print('    myfunc: {}'.format(fopt1))
 
+def pso_esn_parameters_for_l2scad(x):
+    # 0: tao, 1:c0, 2:IC_s,3:IC_e 4:IS_s,5:IS_e, ,6:teacher sacling,7:teacher shift
+    # 0:IC_s,1:IC_e, 2:IS_s,3:IS_e, 4:teacher sacling,5:teacher shift,6: tao, 7:c0,
+    ic_s =x[0]
+    ic_e =x[1]
+    is_s = x[2]
+    is_e = x[3]
+    teacher_scaling = x[4]
+    teacher_shift = x[5]
+    tao = x[6]
+    c0 =  x[7]
+     
+    esn = ESN(n_inputs = 2,
+             n_outputs = 1,
+             n_reservoir = n_reservoir,
+             spectral_radius = spectral_radius, 
+             sparsity = sparsity,
+             noise = noise,
+             input_shift = [is_s,is_e],#[0,0]
+             input_scaling =[ic_s,ic_e],# [0.01, 3]
+             teacher_scaling = teacher_scaling,#1.12,
+             teacher_shift = teacher_shift,#-0.7,
+             out_activation = np.tanh,
+             inverse_out_activation = np.arctanh,
+             random_state = rng,
+             silent = False)
+    esn.penal_tao =tao
+    esn.penal_c0 = c0
+    internal_states,transient = esn.train_reservior(train_ctrl,train_output)
+    pred_train = esn.train_readout_with_l2scad(internal_states,train_output,transient)
+    pred_test = esn.predict(test_ctrl)
+    test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    #get function name as title
+    title = inspect.stack()[0][3]
+    print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
+    return test_error_rate
+ 
+def opt_pso_l2scad():
+    lb = [0,0,0.01,3,1.12,-2,0,3.7]
+    ub = [1,1,0.3, 10,  2,-0.7,1,4]
+    xopt1, fopt1 = pso(pso_esn_parameters_for_l2scad, lb, ub,debug=True)
+
+    print('The optimum is at:')
+    print('    {}'.format(xopt1))
+    print('Optimal function value:')
+    print('    myfunc: {}'.format(fopt1))
 def pso_esn_parameters_for_lasso(x):
     ic_s =x[0]
     ic_e =x[1]
@@ -373,8 +419,9 @@ def compair_readout():
     test_error("pinv",esn_SCAD,pred_train)
 
 if __name__ == "__main__":
-    opt_pso_ridge()
-    opt_pso_lasso()
-    opt_pso_elasticnet()
-    opt_pso_scad()
-    compair_readout()
+    #opt_pso_ridge()
+    #opt_pso_lasso()
+    #opt_pso_elasticnet()
+    #opt_pso_scad()
+    opt_pso_l2scad()
+    #compair_readout()

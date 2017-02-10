@@ -330,6 +330,18 @@ class ESN():
         self.lastoutput = teachers_scaled[-1, :]
         return self.cal_train_error(states,outputs)
 
+    def train_readout_with_l2scad(self,states,outputs,transient):
+        teachers_scaled = self._scale_teacher(outputs)
+
+        #reg = SCAD(states[transient:, :], teachers_scaled[transient:, :])  
+        reg = SCAD.l2scad( teachers_scaled[transient:, :],states[transient:, :])  
+        reg.penal.tao = self.penal_tao
+        reg.penal.c0 = self.penal_c0
+        res=reg.fit()  
+        self.W_out = res.params 
+        # remember the last state for later:
+        self.lastoutput = teachers_scaled[-1, :]
+        return self.cal_train_error(states,outputs)
     def cal_train_error(self,states,outputs):
         if not self.silent:
             print("training error:")
