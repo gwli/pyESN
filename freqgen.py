@@ -180,8 +180,8 @@ def pso_esn_parameters_for_l2scad(x):
     return test_error_rate
  
 def opt_pso_l2scad():
-    lb = [0,0,0.01,3,1.12,-2,0,3.7]
-    ub = [1,1,0.3, 10,  2,-0.7,1,4]
+    lb = [0,0,0.01,3,1.12,-2,0,3.5]
+    ub = [1,1,0.3, 10,  2,-0.7,0.03,3.8]
     xopt1, fopt1 = pso(pso_esn_parameters_for_l2scad, lb, ub,debug=True)
 
     print('The optimum is at:')

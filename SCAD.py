@@ -358,7 +358,8 @@ class PenalizedMixin(object):
         # TODO: define pen_weight as average pen_weight? i.e. per observation
         # I would have prefered len(self.endog) * kwds.get('pen_weight', 1)
         # or use pen_weight_factor in signature
-        self.pen_weight =  kwds.get('pen_weight', len(self.endog))
+        #self.pen_weight =  kwds.get('pen_weight', len(self.endog))
+        self.pen_weight =  np.average(self.endog)
 
         self._init_keys.extend(['penal', 'pen_weight'])
 
@@ -448,7 +449,9 @@ class PenalizedMixin(object):
 
         # currently we use `bfgs` by default
         if method is None:
-            method = 'bfgs'
+            #method = 'bfgs'
+            method = 'newton'
+
 
         if trim is None:
             trim = False  # see below infinite recursion in `fit_constrained
