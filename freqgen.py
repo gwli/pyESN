@@ -4,6 +4,7 @@ from pyESN import ESN
 import copy
 from pso import pso
 import inspect
+import lorenz_ode
 
 import os
 pid = os.getpid()
@@ -38,34 +39,18 @@ N = 10000 # signal length
 min_period = 2
 max_period = 10
 n_changepoints = int(N/200)
-frequency_control,frequency_output = frequency_generator(N,min_period,max_period,n_changepoints)
+#frequency_control,frequency_output = frequency_generator(N,min_period,max_period,n_changepoints)
 
 
-############ lozren
-def lorenz(dt,sigma=10.0,beta=2.66667,ro=28.):
-    def l(x,y,z):
-        xn = y*dt*sigma + x*(1 - dt*sigma)
-        yn = x*dt*(ro-z) + y*(1-dt)
-        zn = x*y*dt + z*(1 - dt*beta)
-        return (xn,yn,zn)
-    return l
+#lorenz
+t,x,y,z = lorenz_ode.lorenz_ode_compute(N)
 
-def trajectory(system,origin,steps):
-    t = [origin]
-    for _ in range(steps):
-        t.append(system(*t[-1]))
-    return t
-
-dt = 1e-3
-
-l = lorenz(dt)
-t = trajectory(l,(1.0,0.0,0.0),N)
-
-frequency_control = np.array([(x,y) for (x,y,_) in t])
-frequency_output = np.array([ [z]  for (_,_,z) in t])
+frequency_control = np.array(zip(x,y))
+frequency_output = np.array([[i] for i in z] )
 ##regular
 frequency_control = (frequency_control- frequency_control.min())/(frequency_control.max()-frequency_control.min())
 frequency_output = (frequency_output- frequency_output.min())/(frequency_output.max()-frequency_output.min())
+
 #######################################################################
 
 traintest_cutoff = int(np.ceil(0.7*N))
@@ -126,7 +111,8 @@ def pso_esn_parameters_for_scad(x):
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
     pred_train = esn.train_readout_with_scad(internal_states,train_output,transient)
     pred_test = esn.predict(test_ctrl)
-    test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    #test_error_rate= np.sqrt(np.mean((pred_test - test_output)**2))
+    test_error_rate= np.sqrt((pred_test - test_output)**2)
     #get function name as title
     title = inspect.stack()[0][3]
     print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
@@ -320,13 +306,17 @@ def opt_pso_elasticnet():
     print('Optimal function value:')
     print('    myfunc: {}'.format(fopt1))
 
+def plot_result(title,esn,pred_train):
+    print("test error:")
+
+
 def test_error(title,esn,pred_train):
 
     print("test error:")
     pred_test = esn.predict(test_ctrl)
     print(np.sqrt(np.mean((pred_test - test_output)**2)))
     #esn.dump_parameters()
-    return
+    #return
     
     window_tr = range(int(len(train_output)/4),int(len(train_output)/4+2000))
     plt.figure(figsize=(10,1.5))
@@ -368,7 +358,7 @@ def test_error(title,esn,pred_train):
     plt.figure(figsize=(3,1.5))
     draw_spectogram(pred_test.flatten())
     plt.title("test: model")
-    #plt.show()
+    plt.show()
 
 
 def compair_readout():
@@ -378,41 +368,42 @@ def compair_readout():
              spectral_radius = spectral_radius, 
              sparsity = sparsity,
              noise = noise,
-             input_shift = [0,0],
-             input_scaling = [0.01, 3],
-             teacher_scaling = 1.12,
-             teacher_shift = -0.7,
+             input_shift = [0.51293657,0.03489584],
+             input_scaling = [0.18636639, 0.11791364],
+             teacher_scaling = 1.45377531,
+             teacher_shift = -0.7997228,
              out_activation = np.tanh,
              inverse_out_activation = np.arctanh,
              random_state = rng,
              silent = False)
-    esn.alpha = 0.5
-    esn.l1_ratio = 0.2
+    esn.penal_tao =0.57201544
+    esn.penal_c0 = 3.76108161
 
     esn.penal_tao = 0.1
     esn.penal_c0 = 3.7
     #pred_train = esn.fit(train_ctrl,train_output,inspect=True)
     internal_states,transient = esn.train_reservior(train_ctrl,train_output)
-    esn_Lasso = copy.deepcopy(esn)
-    esn_Ridge = copy.deepcopy(esn)
-    esn_ElasticNet = copy.deepcopy(esn)
+#    esn_Lasso = copy.deepcopy(esn)
+#    esn_Ridge = copy.deepcopy(esn)
+#    esn_ElasticNet = copy.deepcopy(esn)
     esn_SCAD = copy.deepcopy(esn)
     esn.dump_parameters()
-    print "####pin"
-    pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
-    test_error("pinv",esn,pred_train)
-
-    print "####ridge"
-    pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
-    test_error("pinv",esn_Ridge,pred_train)
-
-    print "####Lasso"
-    pred_train = esn_Lasso.train_readout_with_lasso(internal_states,train_output,transient)
-    test_error("pinv",esn_Lasso,pred_train)
-
-    print "####ElasticNet"
-    pred_train = esn_ElasticNet.train_readout_with_elasticnet(internal_states,train_output,transient)
-    test_error("pinv",esn_ElasticNet,pred_train)
+#    print "####pin"
+#    pred_train = esn.train_readout_with_pin(internal_states,train_output,transient)
+#    test_error("pinv",esn,pred_train)
+#    exit()
+#
+#    print "####ridge"
+#    pred_train = esn_Ridge.train_readout_with_ridge(internal_states,train_output,transient)
+#    test_error("pinv",esn_Ridge,pred_train)
+#
+#    print "####Lasso"
+#    pred_train = esn_Lasso.train_readout_with_lasso(internal_states,train_output,transient)
+#    test_error("pinv",esn_Lasso,pred_train)
+#
+#    print "####ElasticNet"
+#    pred_train = esn_ElasticNet.train_readout_with_elasticnet(internal_states,train_output,transient)
+#    test_error("pinv",esn_ElasticNet,pred_train)
 
     print "####SCAD"
     pred_train = esn_SCAD.train_readout_with_scad(internal_states,train_output,transient)
@@ -423,5 +414,5 @@ if __name__ == "__main__":
     #opt_pso_lasso()
     #opt_pso_elasticnet()
     #opt_pso_scad()
-    opt_pso_l2scad()
-    #compair_readout()
+    #opt_pso_l2scad()
+    compair_readout()
