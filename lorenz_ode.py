@@ -27,7 +27,7 @@ def lorenz_ode_test ( ):
   print ( '  Plot solution components (T,X(T)), (T,Y(T)), and (T,Z(T)).' )
   print ( '  Plot (X(T),Y(T),Z(T)).' )
 
-  n = 2000
+  n = 4000
 
   t, x, y, z = lorenz_ode_compute ( n )
   lorenz_ode_plot_components ( n, t, x, y, z )
@@ -76,9 +76,9 @@ def lorenz_ode_compute ( n ):
   y = np.zeros ( n + 1 )
   z = np.zeros ( n + 1 )
 
-  x[0] = 8.0
-  y[0] = 1.0
-  z[0] = 1.0
+  x[0] = 12
+  y[0] = 2
+  z[0] = 9
 #
 #  Compute the approximate solution at equally spaced times.
 #
