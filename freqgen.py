@@ -8,7 +8,7 @@ import lorenz_ode
 
 import os
 pid = os.getpid()
-debug = raw_input("if debug please attach to PID:{}, then Press any key to debug".format(pid))
+#debug = raw_input("if debug please attach to PID:{}, then Press any key to debug".format(pid))
 # please QT_API=pyside before running
 
 rng = np.random.RandomState(42)
@@ -51,6 +51,13 @@ frequency_output = np.array([[i] for i in z] )
 frequency_control = (frequency_control- frequency_control.min())/(frequency_control.max()-frequency_control.min())
 frequency_output = (frequency_output- frequency_output.min())/(frequency_output.max()-frequency_output.min())
 
+
+# from lozren_data
+lozren_data = np.genfromtxt('LorenzData.csv',delimiter=',')
+frequency_control = lozren_data[:,0:-1]
+frequency_output = lozren_data[:,-1].reshape([4000,1])
+print frequency_output.shape
+#frequency_output =frequency_output.reshape([1,4000]) 
 #######################################################################
 
 traintest_cutoff = int(np.ceil(0.7*N))
@@ -64,14 +71,14 @@ spectral_radius = 0.25
 sparsity = 0.95
 noise = 0.001
 #####################
-esn = ESN(n_inputs = 2,
+esn = ESN(n_inputs = 8,
           n_outputs = 1,
           n_reservoir = n_reservoir,
           spectral_radius = spectral_radius, 
           sparsity = sparsity,
           noise = noise,
-          input_shift = [0,0],
-          input_scaling = [0.01, 3],
+          input_shift = [0,0,0,0,0,0,0,0],
+          input_scaling = [0.01,0.01,0.01,0.01,0.01,0.01,3,3],
           teacher_scaling = 1.12,
           teacher_shift = -0.7,
           out_activation = np.tanh,
@@ -327,7 +334,8 @@ def test_error(title,esn,pred_train):
     plt.title('training (excerpt)')
     plt.ylim([-0.1,1.1])
 
-    window_test = range(2000)
+    window_test = range(test_output.shape[0])
+    #window_test = range(4000)
     plt.figure(figsize=(10,1.5))
     plt.plot(test_ctrl[window_test,1],label='control')
     plt.plot(test_output[window_test],label='target')
@@ -362,20 +370,35 @@ def test_error(title,esn,pred_train):
 
 
 def compair_readout():
-    esn = ESN(n_inputs = 2,
+    esn = ESN(n_inputs = 8,
              n_outputs = 1,
              n_reservoir = n_reservoir,
              spectral_radius = spectral_radius, 
              sparsity = sparsity,
              noise = noise,
-             input_shift = [0.51293657,0.03489584],
-             input_scaling = [0.18636639, 0.11791364],
+             input_shift = [0.51293657,0.51293657,0.51293657,0.51293657,0.03489584,0.03489584,0.03489584,0.03489584],
+             input_scaling = [0.18636639,0.18636639,0.18636639,0.18636639, 0.11791364, 0.11791364, 0.11791364, 0.11791364],
              teacher_scaling = 1.45377531,
              teacher_shift = -0.7997228,
              out_activation = np.tanh,
              inverse_out_activation = np.arctanh,
              random_state = rng,
              silent = False)
+             
+    esn = ESN(n_inputs = 8,
+          n_outputs = 1,
+          n_reservoir = n_reservoir,
+          spectral_radius = spectral_radius, 
+          sparsity = sparsity,
+          noise = noise,
+          input_shift = [0,0,0,0,0,0,0,0],
+          input_scaling = [0.01,0.01,0.01,0.01,0.01,0.01,3,3],
+          teacher_scaling = 1.12,
+          teacher_shift = -0.7,
+          out_activation = np.tanh,
+          inverse_out_activation = np.arctanh,
+          random_state = rng,
+          silent = False)
     esn.penal_tao =0.57201544
     esn.penal_c0 = 3.76108161
 
