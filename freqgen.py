@@ -67,8 +67,8 @@ test_ctrl, test_output  = frequency_control[traintest_cutoff:],frequency_output[
 
 
 n_reservoir = 800
-spectral_radius = 0.25
-sparsity = 0.95
+spectral_radius = 0.9
+sparsity = 0.05
 noise = 0.001
 #####################
 esn = ESN(n_inputs = 8,
@@ -124,12 +124,12 @@ def pso_esn_parameters_for_scad(x):
     title = inspect.stack()[0][3]
     print "#### {} ## train_error:{},test_error:{}".format(title,esn.train_error_rate,test_error_rate)
     return test_error_rate
- 
+    这里画一个原始测试序列的图和一个test_output的图。
 def opt_pso_scad():
     lb = [0,0,0.01,3,1.12,-2,0,3.7]
     ub = [1,1,0.3, 10,  2,-0.7,1,4]
+   # 这个代表什么？
     xopt1, fopt1 = pso(pso_esn_parameters_for_scad, lb, ub,debug=True)
-
     print('The optimum is at:')
     print('    {}'.format(xopt1))
     print('Optimal function value:')
